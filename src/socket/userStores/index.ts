@@ -6,6 +6,7 @@ interface IUserStore {
     removeUser(socketId: string): Promise<void>
     getUser(socketId: string): Promise<User | undefined>
     getUserById(userId: number): Promise<User | undefined>
+    getAllUsers(): Promise<User[]>
 }
 
 

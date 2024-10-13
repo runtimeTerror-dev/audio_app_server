@@ -2,9 +2,9 @@
 /* eslint-disable no-await-in-loop */
 import { Server as HttpServer } from "http"
 import { Server as IOServer, Socket } from "socket.io"
+import { User } from "../models/user"
 import IUserStore from "./userStores"
 import InMemoryUserStore from "./userStores/inMemoryStore"
-import { User } from "../models/user"
 
 export const defaultRooms = [
     { id: 0, name: "The Sassy Sandwich" },
@@ -102,6 +102,9 @@ export default class SocketServer {
                 name: user.name,
             })
 
+            const allUsers = await SocketServer.socketStore.getAllUsers()
+            SocketServer.io.emit("allUsers", allUsers)
+
             // Prepare room user info
             const roomsUserInfo = Object.keys(SocketServer.roomUsersMap).map((roomId) => ({
                 roomId,
@@ -167,11 +170,14 @@ export default class SocketServer {
                                 name: u.name,
                             })),
                         }))
+
+
                         // Emit all room user info to the newly connected user
                         SocketServer.io.emit("roomsUserInfo", roomsInfo)
                     }
                     await SocketServer.socketStore.removeUser(socket.id)
-                    console.log(`Client disconnected: ${socket.id}`)
+                    const allUsers = await SocketServer.socketStore.getAllUsers()
+                    SocketServer.io.emit("allUsers", allUsers)
                 } catch (error) {
                     console.error("Error: ", error)
                 }
