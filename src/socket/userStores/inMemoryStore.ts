@@ -2,15 +2,20 @@ import IUserStore from "."
 import { User } from "../../models/user"
 
 class InMemoryUserStore implements IUserStore {
-    setUser(socketId: string, user: User): Promise<void> {
-        throw new Error("Method not implemented.")
+    private users: Map<string, User> = new Map()
+
+    async setUser(socketId: string, user: User): Promise<void> {
+        this.users.set(socketId, user)
     }
-    removeUser(socketId: string): Promise<void> {
-        throw new Error("Method not implemented.")
+
+    async removeUser(socketId: string): Promise<void> {
+        this.users.delete(socketId)
     }
-    getUser(socketId: string): Promise<User | undefined> {
-        throw new Error("Method not implemented.")
+
+    async getUser(socketId: string): Promise<User | undefined> {
+        return this.users.get(socketId)
     }
+
     private sockets: Map<string, User> = new Map()
 }
 
