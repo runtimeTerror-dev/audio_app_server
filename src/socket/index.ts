@@ -119,7 +119,7 @@ export default class SocketServer {
                 try {
                     ack({ status: 'success' })
                 } catch (error) {
-                    console.error("Error in updating read receipts:", error)
+                    console.error("Error:", error)
                 }
             })
 
@@ -150,36 +150,6 @@ export default class SocketServer {
                 }
             )
 
-            // socket.on(
-            //     SocketServer.socketEvents.LEAVE_ROOM,
-            //     async ({
-            //         roomId,
-            //     }: {
-            //         roomId: number
-            //     }) => {
-            //         try {
-            //             const user = await SocketServer.socketStore.getUser(socket.id)
-
-            //             if (user !== undefined) {
-            //                 console.log(`${user.id} left room: ${roomId}`)
-            //                 if (SocketServer.roomUsersMap[roomId]) {
-            //                     SocketServer.roomUsersMap[roomId] = SocketServer.roomUsersMap[roomId].filter(user => user.id !== user.id)
-            //                     console.log(`User ID ${user.id} has left room ${roomId}.`)
-            //                     SocketServer.io.emit("roomLeft", {
-            //                         roomId,
-            //                         userId: user.id,
-            //                     })
-            //                 } else {
-            //                     console.log(`Room ${roomId} does not exist.`)
-            //                 }
-            //             }
-            //             socket.leave(roomId.toString())
-            //         } catch (error) {
-            //             console.error("Error: ", error)
-            //         }
-            //     }
-            // )
-
             socket.on(SocketServer.socketEvents.DISCONNECT, async () => {
                 try {
                     const reqUser = await SocketServer.socketStore.getUser(socket.id)
@@ -188,9 +158,17 @@ export default class SocketServer {
                         for (const roomId of Object.keys(SocketServer.roomUsersMap)) {
                             SocketServer.roomUsersMap[Number(roomId)] = SocketServer.roomUsersMap[Number(roomId)].filter(u => u.id !== reqUser.id)
                         }
-                        SocketServer.io.emit("userDisconnected", {
-                            'userId': reqUser.id,
-                        })
+                        // Prepare room user info
+                        const roomsInfo = Object.keys(SocketServer.roomUsersMap).map((rid) => ({
+                            roomId: rid,
+                            name: defaultRooms.find(room => room.id.toString() === rid)?.name || "Unknown Room",
+                            users: SocketServer.roomUsersMap[Number(rid)].map(u => ({
+                                id: u.id,
+                                name: u.name,
+                            })),
+                        }))
+                        // Emit all room user info to the newly connected user
+                        SocketServer.io.emit("roomsUserInfo", roomsInfo)
                     }
                     await SocketServer.socketStore.removeUser(socket.id)
                     console.log(`Client disconnected: ${socket.id}`)

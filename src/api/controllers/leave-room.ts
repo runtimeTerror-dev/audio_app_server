@@ -25,7 +25,7 @@ const leaveRoom = async (
             }
 
             const roomsUserInfo = Object.keys(SocketServer.roomUsersMap).map((rId) => ({
-                roomId,
+                roomId: rId,
                 name: defaultRooms.find(room => room.id.toString() === rId)?.name || "Unknown Room",
                 users: SocketServer.roomUsersMap[Number(rId)].map(reqUser => ({
                     id: reqUser.id,
