@@ -22,7 +22,7 @@ const joinRoom = async (
             const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
                 identity: participantName,
             })
-            at.addGrant({ roomJoin: true, room: roomName })
+            at.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true })
 
             const token = at.toJwt()
             console.log('access token', token)
