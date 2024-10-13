@@ -1,0 +1,17 @@
+{
+    "entryFile": "src/index.ts",
+    "noImplicitAdditionalProperties": "throw-on-extras",
+    "spec": {
+        "outputDirectory": "public",
+        "specVersion": 3,
+        "securityDefinitions": {
+            "aws_cognito": {
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "type": "http",
+                "name": "authorization",
+                "in": "header"
+            }
+        }
+    }
+}
