@@ -27,7 +27,7 @@ const joinRoom = async (
         return res.status(200).json({
             success: true,
             message: "Room Joined Successfully",
-            data: null,
+            data: token,
         })
     } catch (error) {
         console.log("Error: ", error)
