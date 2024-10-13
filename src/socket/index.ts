@@ -4,14 +4,15 @@ import { Server as HttpServer } from "http"
 import { Server as IOServer, Socket } from "socket.io"
 import IUserStore from "./userStores"
 import InMemoryUserStore from "./userStores/inMemoryStore"
-import { User } from "../models/user";
-const rooms = [
+import { User } from "../models/user"
+
+export const defaultRooms = [
     { id: 0, name: "The Sassy Sandwich" },
     { id: 1, name: "Giggle Factory" },
     { id: 2, name: "Banana Bunker" },
-];
+]
 export default class SocketServer {
-    static userIdCounter = 0;
+    static userIdCounter = 0
 
     static availableNames = [
         "Enchanted Pineapple", "Radiant Peach", "Charming Coconut", "Dreamy Lychee",
@@ -46,7 +47,7 @@ export default class SocketServer {
         "Enchanting Pineapple", "Gorgeous Kiwi", "Mystical Cantaloupe",
         "Colorful Pomegranate", "Whimsical Blueberry", "Refreshing Honeydew",
         "Dashing Watermelon", "Heavenly Coconut"
-    ];
+    ]
 
     static instance: SocketServer
 
@@ -56,10 +57,10 @@ export default class SocketServer {
 
     static roomUsersMap: Record<number, User[]> =
         {
-            [rooms[0].id]: [], // Users in "The Sassy Sandwich"
-            [rooms[1].id]: [], // Users in "Giggle Factory"
-            [rooms[2].id]: [], // Users in "Banana Bunker"
-        };
+            [defaultRooms[0].id]: [], // Users in "The Sassy Sandwich"
+            [defaultRooms[1].id]: [], // Users in "Giggle Factory"
+            [defaultRooms[2].id]: [], // Users in "Banana Bunker"
+        }
 
     static socketEvents = {
         SET_USER: "setUser",
@@ -92,9 +93,9 @@ export default class SocketServer {
 
             const randomName = SocketServer.availableNames[
                 Math.floor(Math.random() * SocketServer.availableNames.length)
-            ];
-            const user: User = { id: SocketServer.userIdCounter++, name: randomName };
-            await SocketServer.socketStore.setUser(socket.id, user);
+            ]
+            const user: User = { id: SocketServer.userIdCounter++, name: randomName }
+            await SocketServer.socketStore.setUser(socket.id, user)
 
             socket.emit("userInfo", {
                 id: user.id,
@@ -102,19 +103,17 @@ export default class SocketServer {
             })
 
             // Prepare room user info
-            const roomsUserInfo = Object.keys(SocketServer.roomUsersMap).map((roomId) => {
-                return {
-                    roomId,
-                    name: rooms.find(room => room.id.toString() === roomId)?.name || "Unknown Room",
-                    users: SocketServer.roomUsersMap[Number(roomId)].map(user => ({
-                        id: user.id,
-                        name: user.name,
-                    })),
-                };
-            });
+            const roomsUserInfo = Object.keys(SocketServer.roomUsersMap).map((roomId) => ({
+                roomId,
+                name: defaultRooms.find(room => room.id.toString() === roomId)?.name || "Unknown Room",
+                users: SocketServer.roomUsersMap[Number(roomId)].map(reqUser => ({
+                    id: reqUser.id,
+                    name: reqUser.name,
+                })),
+            }))
 
             // Emit all room user info to the newly connected user
-            socket.emit("roomsUserInfo", roomsUserInfo);
+            socket.emit("roomsUserInfo", roomsUserInfo)
 
             socket.on(SocketServer.socketEvents.PING_SOCKET, async (_, ack) => {
                 try {
@@ -128,68 +127,69 @@ export default class SocketServer {
                 SocketServer.socketEvents.JOIN_ROOM,
                 async ({ roomId }: { roomId: number }) => {
                     try {
-                        const user = await SocketServer.socketStore.getUser(socket.id);
+                        const reqUser = await SocketServer.socketStore.getUser(socket.id)
 
-                        if (user !== undefined && SocketServer.roomUsersMap[roomId]) {
-                            console.log(`${user.id} joined room: ${roomId}`);
+                        if (reqUser !== undefined && SocketServer.roomUsersMap[roomId]) {
+                            console.log(`${reqUser.id} joined room: ${roomId}`)
 
-                            SocketServer.roomUsersMap[roomId].push(user);
-                            console.log(`User ID ${user.id} has joined room ${roomId}.`);
+                            SocketServer.roomUsersMap[roomId].push(reqUser)
+                            console.log(`User ID ${user.id} has joined room ${roomId}.`)
 
                             SocketServer.io.emit("userJoined", {
                                 roomId,
-                                userId: user.id,
-                            });
+                                userId: reqUser.id,
+                            })
 
-                            socket.join(roomId.toString());
+                            socket.join(roomId.toString())
                         } else {
-                            console.log(`User not found for socket ID: ${socket.id}`);
+                            console.log(`User not found for socket ID: ${socket.id}`)
                         }
-                    } catch (error) {
-                        console.error("Error: ", error);
-                    }
-                }
-            );
-
-            socket.on(
-                SocketServer.socketEvents.LEAVE_ROOM,
-                async ({
-                    roomId,
-                }: {
-                    roomId: number
-                }) => {
-                    try {
-                        const user = await SocketServer.socketStore.getUser(socket.id);
-
-                        if (user != undefined) {
-                            console.log(`${user.id} left room: ${roomId}`)
-                            if (SocketServer.roomUsersMap[roomId]) {
-                                SocketServer.roomUsersMap[roomId] = SocketServer.roomUsersMap[roomId].filter(user => user.id !== user.id);
-                                console.log(`User ID ${user.id} has left room ${roomId}.`);
-                                SocketServer.io.emit("roomLeft", {
-                                    roomId,
-                                    userId: user.id,
-                                })
-                            } else {
-                                console.log(`Room ${roomId} does not exist.`);
-                            }
-                        }
-                        socket.leave(roomId.toString())
                     } catch (error) {
                         console.error("Error: ", error)
                     }
                 }
             )
 
+            // socket.on(
+            //     SocketServer.socketEvents.LEAVE_ROOM,
+            //     async ({
+            //         roomId,
+            //     }: {
+            //         roomId: number
+            //     }) => {
+            //         try {
+            //             const user = await SocketServer.socketStore.getUser(socket.id)
+
+            //             if (user !== undefined) {
+            //                 console.log(`${user.id} left room: ${roomId}`)
+            //                 if (SocketServer.roomUsersMap[roomId]) {
+            //                     SocketServer.roomUsersMap[roomId] = SocketServer.roomUsersMap[roomId].filter(user => user.id !== user.id)
+            //                     console.log(`User ID ${user.id} has left room ${roomId}.`)
+            //                     SocketServer.io.emit("roomLeft", {
+            //                         roomId,
+            //                         userId: user.id,
+            //                     })
+            //                 } else {
+            //                     console.log(`Room ${roomId} does not exist.`)
+            //                 }
+            //             }
+            //             socket.leave(roomId.toString())
+            //         } catch (error) {
+            //             console.error("Error: ", error)
+            //         }
+            //     }
+            // )
+
             socket.on(SocketServer.socketEvents.DISCONNECT, async () => {
                 try {
-                    const user = await SocketServer.socketStore.getUser(socket.id);
-                    if (user !== undefined) {
+                    const reqUser = await SocketServer.socketStore.getUser(socket.id)
+                    if (reqUser !== undefined) {
+                        // eslint-disable-next-line no-restricted-syntax
                         for (const roomId of Object.keys(SocketServer.roomUsersMap)) {
-                            SocketServer.roomUsersMap[Number(roomId)] = SocketServer.roomUsersMap[Number(roomId)].filter(user => user.id !== user.id);
+                            SocketServer.roomUsersMap[Number(roomId)] = SocketServer.roomUsersMap[Number(roomId)].filter(u => u.id !== reqUser.id)
                         }
                         SocketServer.io.emit("userDisconnected", {
-                            'userId': user.id,
+                            'userId': reqUser.id,
                         })
                     }
                     await SocketServer.socketStore.removeUser(socket.id)

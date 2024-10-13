@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { Request, Response } from "express"
 
-import { AccessToken } from 'livekit-server-sdk'
 import SocketServer, { defaultRooms } from "../../socket"
 
-const joinRoom = async (
+const leaveRoom = async (
     req: Request,
     res: Response
 ): Promise<Response> => {
@@ -12,22 +11,18 @@ const joinRoom = async (
         const { roomId, userId } = req.body
         const user = await SocketServer.socketStore.getUserById(Number(userId))
         if (user) {
-            // if this room doesn't exist, it'll be automatically created when the first
-            // client joins
-            const roomName = roomId
-            // identifier to be used for participant.
-            // it's available as LocalParticipant.identity with livekit-client SDK
-            const participantName = userId
-
-            const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
-                identity: participantName,
-            })
-            at.addGrant({ roomJoin: true, room: roomName })
-
-            const token = at.toJwt()
-            console.log('access token', token)
-
-            SocketServer.roomUsersMap[roomId].push(user)
+            console.log(`${user.id} left room: ${roomId}`)
+            if (SocketServer.roomUsersMap[roomId]) {
+                SocketServer.roomUsersMap[roomId] = SocketServer.roomUsersMap[roomId].filter(u => u.id !== user.id)
+                console.log(`User ID ${user.id} has left room ${roomId}.`)
+            } else {
+                console.log(`Room ${roomId} does not exist.`)
+                return res.status(500).json({
+                    success: true,
+                    message: "Error leaving room",
+                    data: null,
+                })
+            }
 
             const roomsUserInfo = Object.keys(SocketServer.roomUsersMap).map((rId) => ({
                 roomId,
@@ -42,13 +37,13 @@ const joinRoom = async (
             SocketServer.io.emit("roomsUserInfo", roomsUserInfo)
             return res.status(200).json({
                 success: true,
-                message: "Room Joined Successfully",
-                data: token,
+                message: "Room Left Successfully",
+                data: "",
             })
         }
         return res.status(500).json({
             success: true,
-            message: "Error joining room",
+            message: "Error leaving room",
             data: null,
         })
     } catch (error) {
@@ -56,10 +51,10 @@ const joinRoom = async (
 
         return res.status(500).json({
             success: true,
-            message: "Error joining room",
+            message: "Error leaving room",
             data: null,
         })
     }
 }
 
-export default joinRoom
+export default leaveRoom

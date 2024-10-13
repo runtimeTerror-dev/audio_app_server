@@ -16,6 +16,11 @@ class InMemoryUserStore implements IUserStore {
         return this.users.get(socketId)
     }
 
+    // Retrieve a user by their userId using Array.prototype.find
+    async getUserById(userId: number): Promise<User | undefined> {
+        return Array.from(this.users.values()).find(user => user.id === userId)
+    }
+
     private sockets: Map<string, User> = new Map()
 }
 
