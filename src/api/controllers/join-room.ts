@@ -17,10 +17,10 @@ const joinRoom = async (
             const roomName = roomId
             // identifier to be used for participant.
             // it's available as LocalParticipant.identity with livekit-client SDK
-            const participantName = user.name;
+            const participantName = user.name
 
             const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
-                identity: participantName,
+                identity: participantName, ttl: '1h'
             })
             at.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true })
 
