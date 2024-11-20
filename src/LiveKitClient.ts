@@ -13,7 +13,7 @@ class LiveKitClient {
 
     public static getInstance(): RoomServiceClient {
         if (!LiveKitClient.instance) {
-            const livekitHost = 'http://127.0.0.1:7880'
+            const livekitHost = process.env.LIVEKIT_HOST as string
             LiveKitClient.instance = new RoomServiceClient(
                 livekitHost,
                 process.env.LIVEKIT_API_KEY as string,
