@@ -17,7 +17,7 @@ const addToAllRooms = async (
                 const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
                     identity: user.id.toString(), ttl: '2h'
                 })
-                at.addGrant({ roomJoin: true, room: room.id.toString(), canSubscribe: false, hidden: true })
+                at.addGrant({ roomJoin: true, room: room.id.toString(), canSubscribe: true, canPublish: false, hidden: true })
                 const token = at.toJwt()
                 tokens.push(token)
             })
